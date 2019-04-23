@@ -9,6 +9,7 @@ namespace DatingApp.Data
 {
     public class AuthRepository : IAuthRepository
     {
+        //Add another layer of abstraction between our controller and our bussnies logic and our database
         private readonly DataContext _Context;
 
         public AuthRepository(DataContext dbContext)

@@ -42,7 +42,7 @@ namespace DatingApp.Controllers
                 Username = userForRegisterDto.Username
             };
 
-            var cratedUser = await _repo.Register(userToCreate, userForRegisterDto.Password);
+            var createdUser = await _repo.Register(userToCreate, userForRegisterDto.Password);
 
             return StatusCode(201);
         }
@@ -50,39 +50,42 @@ namespace DatingApp.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(UserForLoginDto userForLoginDto)
         {
-            var userFromRepo = await _repo.Login(userForLoginDto.Username.ToLower(), userForLoginDto.Password);
+                //throw new Exception("the Computer says NO");
 
-            if (userFromRepo == null)
-                return Unauthorized();
+                var userFromRepo = await _repo.Login(userForLoginDto.Username.ToLower(), userForLoginDto.Password);
+
+                if (userFromRepo == null)
+                    return Unauthorized();
 
 
-            //Creating the JWT (JSON Web Tokens) that we need to return to the client
-            var claims = new[] //the token contain 2 claims: Id and username
-            {
+                //Creating the JWT (JSON Web Tokens) that we need to return to the client
+                var claims = new[] //the token contain 2 claims: Id and username
+                {
                 new Claim(ClaimTypes.NameIdentifier,userFromRepo.Id.ToString()),
                 new Claim(ClaimTypes.Name,userFromRepo.Username)
             };
 
-            //in order to validate the token when it comes back, it need to sign, we use a key  and we encrypt it using hashing algorithem
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetSection("AppSettings:Token").Value));
+                //in order to validate the token when it comes back, it need to sign, we use a key  and we encrypt it using hashing algorithem
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetSection("AppSettings:Token").Value));
 
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.Now.AddDays(1),  //in how many time the token that we will send will be expire
-                SigningCredentials = creds  //give it the signing credential to be validated when it came back
-            };
+                var tokenDescriptor = new SecurityTokenDescriptor
+                {
+                    Subject = new ClaimsIdentity(claims),
+                    Expires = DateTime.Now.AddDays(1),  //in how many time the token that we will send will be expire
+                    SigningCredentials = creds  //give it the signing credential to be validated when it came back
+                };
 
-            var tokenHandler = new JwtSecurityTokenHandler();
+                var tokenHandler = new JwtSecurityTokenHandler();
 
-            var token = tokenHandler.CreateToken(tokenDescriptor);
+                var token = tokenHandler.CreateToken(tokenDescriptor);
 
-            return Ok(new
-            {
-                token = tokenHandler.WriteToken(token)
-            });
+                return Ok(new
+                {
+                    token = tokenHandler.WriteToken(token)
+                });
+            
 
             //we can decode see the token that we receive at https://jwt.io/ if we want
 

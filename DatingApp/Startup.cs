@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using DatingApp.Data;
+using DatingApp.Helpers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -63,7 +67,27 @@ namespace DatingApp
             }
             else
             {
-                app.UseHsts();
+                //UseExceptionHandler: cach exceptions and re-execute the request in a new pipe line (anoher procesuder) 
+                //if we only write app.UseExceptionHandler(); it will send a 500 error and handel all exception globaly without showing anything
+                app.UseExceptionHandler(builder =>
+                {
+                    builder.Run(async context =>
+                    {
+                        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+
+
+                        var error = context.Features.Get<IExceptionHandlerFeature>();  //this will save all error details
+                        if (error != null)
+                        {
+                            context.Response.AddApplicationError(error.Error.Message); //AddApplicationError is a methode from class Extension we create to write new responses 
+                                                                                       //headers in the google developer tool and in postman. Plus to restrinc showing unwanted error
+                                                                                       //
+                            await context.Response.WriteAsync(error.Error.Message);
+                        }
+
+                    });
+                });
+                //app.UseHsts();
             }
 
             app.UseHttpsRedirection();
